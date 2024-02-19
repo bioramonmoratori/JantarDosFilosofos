@@ -12,12 +12,16 @@ import java.util.Scanner;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Queue;
+import java.util.ArrayDeque;
 
 public class JantarDosFilosofos {
 	
 	public static List<Filosofo> filosofos = new ArrayList<Filosofo>();
 	public static List<Garfo> garfos = new ArrayList<Garfo>();
-	public static Queue<Filosofo> filaParaComer = new Queue<Filosofo>();
+
+	// Fila com 5 filosofos
+	public static Queue<Filosofo> filaParaComer = new ArrayDeque<Filosofo>(5);	
+
 
 	public static void main(String[] args){
 		
@@ -52,26 +56,52 @@ public class JantarDosFilosofos {
 		}
 
 		// Ciclo de Tarefas
-		for(true){
+		for(int i = 0; i < 100; i++){
+
+			// Atualiza a fila de espera para comer
+			if(filaParaComer.isEmpty()){
+				for(Filosofo filosofo : filosofos){
+					if(filosofo.getEstado() == Estado.PENSANDO){
+						filaParaComer.add(filosofo);
+						System.out.println("Filosofo " + filosofo.getId() + " entrou na fila");
+					}
+				}
+			}
+
+			if(filaParaComer.size() < 5){
+				for(Filosofo filosofo : filosofos){
+					if(filosofo.getEstado() == Estado.PENSANDO){
+						filaParaComer.add(filosofo);
+						System.out.println("Filosofo " + filosofo.getId() + " entrou na fila");
+					}
+				}
+			}
+
 			// Verifica se algum filosofo acabou de comer para liberar os garfos
 			for(Filosofo filosofo : filosofos){
 				if(filosofo.getEstado() == Estado.TERMINOU_DE_COMER){
 					filosofo.getGarfoEsquerda().setDisponivel(true);
 					filosofo.getGarfoDireita().setDisponivel(true);
 					filosofo.setEstado(Estado.PENSANDO);
+
+					System.out.println("Filosofo " + filosofo.getId() + " terminou de comer");
 				}
 			}
 
-			// Atualiza a fila de espera para comer
-			for(Filosofo filosofo : filosofos){
-				if(filaParaComer.isEmpty()){
-					if(filosofo.getEstado() == Estado.PENSANDO){
-						filaParaComer.add(filosofo);
-					}
+			// Todos os filosofos da fila que puderem comer, comem
+			// Se não puderem comer, vao para o final da fila
+			for(Filosofo filosofo : filaParaComer){
+				if(filosofo.getEstado() == Estado.PENSANDO && filosofo.getGarfoEsquerda().getDisponivel() && filosofo.getGarfoDireita().getDisponivel()){
+					filosofo.comer();
+					filaParaComer.remove(filosofo);
+					System.out.println("Filosofo " + filosofo.getId() + " comeu");
+				} else {
+					filaParaComer.remove(filosofo);
+					filaParaComer.add(filosofo);
+
+					System.out.println("Filosofo " + filosofo.getId() + " foi para o final da fila");
 				}
 			}
-
-			// Todos os filosofos que podem comer, comem
 		}
 	}
 }
@@ -98,6 +128,7 @@ public class Filosofo {
 			this.garfoDireita.setDisponivel(false);
 			this.numeroDeVezesQueComeu++;
 			this.estado = Estado.TERMINOU_DE_COMER;
+			System.out.println("Filosofo " + this.id + " comeu " + this.numeroDeVezesQueComeu + " vezes");
 			return true;
 		} else {
 			this.estado = Estado.PENSANDO;
